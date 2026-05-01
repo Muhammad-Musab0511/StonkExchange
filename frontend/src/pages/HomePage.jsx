@@ -11,7 +11,7 @@ const imageUrls = Object.keys(imageModules)
 
 export default function HomePage() {
   const containerRef = useRef(null);
-  
+
   // Track scroll progress within the 600vh container
   const { scrollYProgress } = useScroll({
     target: containerRef,
@@ -25,11 +25,11 @@ export default function HomePage() {
     const canvas = canvasRef.current;
     if (!canvas || imageUrls.length === 0) return;
     const ctx = canvas.getContext('2d');
-    
+
     // Preload images
     const loadedImages = [];
     let imagesLoaded = 0;
-    
+
     for (let i = 0; i < frameCount; i++) {
       const img = new Image();
       img.src = imageUrls[i];
@@ -42,20 +42,20 @@ export default function HomePage() {
       };
       loadedImages.push(img);
     }
-    
+
     const renderFrame = (index) => {
       if (!ctx || !canvas || !loadedImages[index]) return;
       const img = loadedImages[index];
-      
+
       // Clear canvas
       ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
+
       // Calculate aspect ratio to cover canvas
       const canvasRatio = canvas.width / canvas.height;
       const imgRatio = img.width / img.height;
-      
+
       let drawWidth, drawHeight, offsetX, offsetY;
-      
+
       if (canvasRatio > imgRatio) {
         drawWidth = canvas.width;
         drawHeight = canvas.width / imgRatio;
@@ -67,7 +67,7 @@ export default function HomePage() {
         offsetX = (canvas.width - drawWidth) / 2;
         offsetY = 0;
       }
-      
+
       ctx.drawImage(img, offsetX, offsetY, drawWidth, drawHeight);
     };
 
@@ -101,7 +101,7 @@ export default function HomePage() {
   // 65-80%: Security
   // 80-95%: Reassembly / CTA
   // 95-100%: Creators
-  
+
   const heroOpacity = useTransform(scrollYProgress, [0, 0.05, 0.1], [1, 1, 0]);
   const heroY = useTransform(scrollYProgress, [0, 0.1], [0, -100]);
   const heroDisplay = useTransform(scrollYProgress, (v) => v > 0.12 ? "none" : "flex");
@@ -129,12 +129,12 @@ export default function HomePage() {
   // Navbar background fade in
   const navBg = useTransform(scrollYProgress, [0, 0.05], ["rgba(5,5,5,0)", "rgba(5,5,5,0.75)"]);
   const navBlur = useTransform(scrollYProgress, [0, 0.05], ["blur(0px)", "blur(12px)"]);
-  
+
   return (
     <div className="bg-[#050505] min-h-screen text-white font-sans selection:bg-[#0050FF]/30">
-      
+
       {/* Navigation */}
-      <motion.nav 
+      <motion.nav
         className="fixed top-0 left-0 right-0 z-50 flex items-center justify-between px-6 py-4 md:px-12"
         style={{ backgroundColor: navBg, backdropFilter: navBlur, WebkitBackdropFilter: navBlur }}
       >
@@ -156,24 +156,24 @@ export default function HomePage() {
 
       {/* Scrollytelling Container */}
       <div ref={containerRef} className="relative h-[600vh]">
-        
+
         {/* Sticky Canvas & Content */}
         <div className="sticky top-0 h-screen w-full overflow-hidden">
-          
+
           {/* Subtle Background Glow */}
           <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,_#050815_0%,_transparent_70%)] opacity-60 pointer-events-none" />
 
           {/* HTML5 Canvas for Image Sequence */}
-          <canvas 
-            ref={canvasRef} 
+          <canvas
+            ref={canvasRef}
             className="absolute inset-0 w-full h-full object-cover z-0"
           />
 
           {/* Overlay Content Blocks */}
           <div className="absolute inset-0 z-10 flex flex-col justify-center px-6 md:px-24 max-w-7xl mx-auto pointer-events-none">
-            
+
             {/* HERO / INTRO (0-15%) */}
-            <motion.div 
+            <motion.div
               style={{ opacity: heroOpacity, y: heroY, display: heroDisplay }}
               className="absolute inset-0 flex-col items-center justify-center text-center mt-32"
             >
@@ -189,7 +189,7 @@ export default function HomePage() {
             </motion.div>
 
             {/* ENGINEERING REVEAL (15-40%) */}
-            <motion.div 
+            <motion.div
               style={{ opacity: engOpacity, y: engY, display: engDisplay }}
               className="absolute inset-0 flex-col justify-center items-start text-left max-w-md pointer-events-auto"
             >
@@ -207,7 +207,7 @@ export default function HomePage() {
             </motion.div>
 
             {/* NOISE CANCELLING (40-65%) */}
-            <motion.div 
+            <motion.div
               style={{ opacity: noiseOpacity, y: noiseY, display: noiseDisplay }}
               className="absolute inset-0 flex-col justify-center items-end text-right ml-auto max-w-md pointer-events-auto"
             >
@@ -222,7 +222,7 @@ export default function HomePage() {
             </motion.div>
 
             {/* SOUND & UPSCALING (65-85%) */}
-            <motion.div 
+            <motion.div
               style={{ opacity: soundOpacity, y: soundY, display: soundDisplay }}
               className="absolute inset-0 flex-col justify-center items-start text-left max-w-md pointer-events-auto"
             >
@@ -236,7 +236,7 @@ export default function HomePage() {
             </motion.div>
 
             {/* REASSEMBLY & CTA (80-95%) */}
-            <motion.div 
+            <motion.div
               style={{ opacity: ctaOpacity, y: ctaY, display: ctaDisplay }}
               className="absolute inset-0 flex-col items-center justify-center text-center pointer-events-auto"
             >
@@ -260,7 +260,7 @@ export default function HomePage() {
             </motion.div>
 
             {/* CREATORS (95-100%) */}
-            <motion.div 
+            <motion.div
               style={{ opacity: creatorsOpacity, y: creatorsY, display: creatorsDisplay }}
               className="absolute inset-0 flex-col items-center justify-end text-center pb-24 pointer-events-auto"
             >
@@ -269,8 +269,8 @@ export default function HomePage() {
               </h3>
               <div className="space-y-2 text-white/60 text-lg md:text-xl font-medium">
                 <p>Muhammad Hashim <span className="text-[#00D6FF] ml-2">24L-0775</span></p>
-                <p>Abdullah Kmaran <span className="text-[#00D6FF] ml-2">24L-0581</span></p>
-                <p>Muhmmad Musab <span className="text-[#00D6FF] ml-2">24L-0511</span></p>
+                <p>Abdullah Kamran <span className="text-[#00D6FF] ml-2">24L-0581</span></p>
+                <p>Muhammad Musab <span className="text-[#00D6FF] ml-2">24L-0511</span></p>
               </div>
             </motion.div>
 
