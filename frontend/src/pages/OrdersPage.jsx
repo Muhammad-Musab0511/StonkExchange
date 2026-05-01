@@ -1,16 +1,32 @@
 import { useMemo, useState } from 'react';
-import { useQuery } from 'react-query';
+import { useMutation, useQuery, useQueryClient } from 'react-query';
 import OrdersTable from '../components/orders/OrdersTable';
-import { fetchOrders } from '../features/trading/tradingService';
+import { cancelOrder, fetchOrders } from '../features/trading/tradingService';
 
 export default function OrdersPage() {
   const [filter, setFilter] = useState('open');
+  const queryClient = useQueryClient();
 
   const ordersQuery = useQuery({
     queryKey: ['orders'],
     queryFn: fetchOrders,
     refetchInterval: 2_000
   });
+
+  const cancelMutation = useMutation({
+    mutationFn: cancelOrder,
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['orders'] }),
+        queryClient.invalidateQueries({ queryKey: ['wallet'] }),
+        queryClient.invalidateQueries({ queryKey: ['portfolio'] })
+      ]);
+    }
+  });
+
+  const handleCancel = (orderId) => {
+    cancelMutation.mutate(orderId);
+  };
 
   const rows = useMemo(() => {
     const orders = ordersQuery.data || [];
@@ -50,7 +66,7 @@ export default function OrdersPage() {
         </div>
       </div>
 
-      <OrdersTable rows={rows} />
+      <OrdersTable rows={rows} onCancel={handleCancel} cancelDisabled={cancelMutation.isLoading} />
     </section>
   );
 }

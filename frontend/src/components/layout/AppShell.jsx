@@ -12,7 +12,6 @@ export default function AppShell() {
 
   const navItems = [
     { to: '/markets', label: 'Markets' },
-    { to: '/trade', label: 'Trade' },
     { to: '/orders', label: 'Orders' },
     { to: '/portfolio', label: 'Portfolio' }
   ];

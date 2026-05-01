@@ -56,7 +56,12 @@ router.get('/:ticker/orderbook', async (req, res) => {
     params.push(side);
   }
 
-  query += ' ORDER BY side, limit_price DESC';
+  query += `
+    ORDER BY
+      CASE WHEN side = 'sell' THEN 0 ELSE 1 END,
+      CASE WHEN side = 'sell' THEN limit_price ELSE NULL END ASC,
+      CASE WHEN side = 'buy' THEN limit_price ELSE NULL END DESC
+  `;
 
   const { rows } = await pool.query(query, params);
   res.json({ data: rows });

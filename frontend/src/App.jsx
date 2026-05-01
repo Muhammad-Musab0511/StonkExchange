@@ -8,7 +8,6 @@ import OrdersPage from './pages/OrdersPage';
 import AdminSimulatorPage from './pages/AdminSimulatorPage';
 import StockDetailPage from './pages/StockDetailPage';
 import PortfolioPage from './pages/PortfolioPage';
-import TradePage from './pages/TradePage';
 import { useAuthStore } from './store/authStore';
 
 export default function App() {
@@ -30,7 +29,6 @@ export default function App() {
         <Route index element={<Navigate to="/markets" replace />} />
         <Route path="markets" element={<MarketsPage />} />
         <Route path="markets/:ticker" element={<StockDetailPage />} />
-        <Route path="trade" element={<TradePage />} />
         <Route path="orders" element={<OrdersPage />} />
         <Route path="portfolio" element={<PortfolioPage />} />
         {user?.role === 'admin' ? <Route path="admin/simulator" element={<AdminSimulatorPage />} /> : null}

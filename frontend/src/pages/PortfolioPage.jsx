@@ -1,16 +1,22 @@
 import { useMemo } from 'react';
 import { useQuery } from 'react-query';
-import { fetchPortfolio, fetchWallet } from '../features/portfolio/portfolioService';
+import { fetchPortfolio, fetchWallet, fetchPnL } from '../features/portfolio/portfolioService';
 import { fetchStocks } from '../features/trading/tradingService';
 
 function money(value) {
   return Number(value || 0).toFixed(2);
 }
 
+function pnlColor(value) {
+  if (value >= 0) return 'text-green';
+  return 'text-red';
+}
+
 export default function PortfolioPage() {
   const walletQuery = useQuery({ queryKey: ['wallet'], queryFn: fetchWallet });
   const portfolioQuery = useQuery({ queryKey: ['portfolio'], queryFn: fetchPortfolio });
   const stocksQuery = useQuery({ queryKey: ['stocks'], queryFn: fetchStocks });
+  const pnlQuery = useQuery({ queryKey: ['pnl'], queryFn: fetchPnL, refetchInterval: 5000 });
 
   const holdings = useMemo(() => {
     return (portfolioQuery.data || [])
@@ -35,6 +41,12 @@ export default function PortfolioPage() {
   const holdingsValue = holdings.reduce((total, holding) => total + holding.currentValue, 0);
   const totalBalance = availableBalance + reservedBalance + holdingsValue;
 
+  const pnlData = pnlQuery.data || { daily: 0, weekly: 0, monthly: 0, holdings: [] };
+  const totalCostBasis = holdings.reduce((sum, h) => sum + (Number(h.quantity || 0) * Number(h.average_price || 0)), 0);
+  const dailyPercent = totalCostBasis > 0 ? ((pnlData.daily / totalCostBasis) * 100).toFixed(2) : '0.00';
+  const weeklyPercent = totalCostBasis > 0 ? ((pnlData.weekly / totalCostBasis) * 100).toFixed(2) : '0.00';
+  const monthlyPercent = totalCostBasis > 0 ? ((pnlData.monthly / totalCostBasis) * 100).toFixed(2) : '0.00';
+
   return (
     <section className="space-y-6">
       <div>
@@ -42,18 +54,44 @@ export default function PortfolioPage() {
         <p className="mt-1 text-sm text-slate-400">Balances, holdings, and live profit and loss.</p>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-3">
+      <div className="grid gap-6 md:grid-cols-4">
         <div className="glass-panel p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Total Balance</p>
-          <p className="mt-3 text-3xl font-bold text-white">${money(totalBalance)}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Available Cash</p>
+          <p className="mt-3 text-2xl font-bold text-white">${money(availableBalance)}</p>
+          <p className="mt-1 text-xs text-slate-400">Can trade or withdraw</p>
         </div>
         <div className="glass-panel p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Available Balance</p>
-          <p className="mt-3 text-3xl font-bold text-white">${money(availableBalance)}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Reserved (Open Orders)</p>
+          <p className="mt-3 text-2xl font-bold text-yellow-500">${money(reservedBalance)}</p>
+          <p className="mt-1 text-xs text-slate-400">Locked in pending buys</p>
         </div>
         <div className="glass-panel p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Reserved + Holdings</p>
-          <p className="mt-3 text-3xl font-bold text-white">${money(reservedBalance + holdingsValue)}</p>
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Holdings Value</p>
+          <p className="mt-3 text-2xl font-bold text-white">${money(holdingsValue)}</p>
+          <p className="mt-1 text-xs text-slate-400">Current market value</p>
+        </div>
+        <div className="glass-panel p-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">Total Account</p>
+          <p className="mt-3 text-2xl font-bold text-accent">${money(totalBalance)}</p>
+          <p className="mt-1 text-xs text-slate-400">All assets combined</p>
+        </div>
+      </div>
+
+      <div className="grid gap-4 md:grid-cols-3">
+        <div className="glass-panel p-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">1D P&L</p>
+          <p className={`mt-3 text-2xl font-bold ${pnlColor(pnlData.daily)}`}>${money(pnlData.daily)}</p>
+          <p className={`mt-1 text-sm ${pnlColor(pnlData.daily)}`}>{dailyPercent}%</p>
+        </div>
+        <div className="glass-panel p-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">7D P&L</p>
+          <p className={`mt-3 text-2xl font-bold ${pnlColor(pnlData.weekly)}`}>${money(pnlData.weekly)}</p>
+          <p className={`mt-1 text-sm ${pnlColor(pnlData.weekly)}`}>{weeklyPercent}%</p>
+        </div>
+        <div className="glass-panel p-6">
+          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">30D P&L</p>
+          <p className={`mt-3 text-2xl font-bold ${pnlColor(pnlData.monthly)}`}>${money(pnlData.monthly)}</p>
+          <p className={`mt-1 text-sm ${pnlColor(pnlData.monthly)}`}>{monthlyPercent}%</p>
         </div>
       </div>
 
@@ -65,28 +103,43 @@ export default function PortfolioPage() {
               <th className="px-5 py-4">Quantity</th>
               <th className="px-5 py-4">Avg Price</th>
               <th className="px-5 py-4">Current Value</th>
-              <th className="px-5 py-4">Profit/Loss</th>
+              <th className="px-5 py-4">Total P&L</th>
+              <th className="px-5 py-4">1D P&L</th>
+              <th className="px-5 py-4">7D P&L</th>
+              <th className="px-5 py-4">30D P&L</th>
             </tr>
           </thead>
           <tbody>
             {holdings.length === 0 ? (
               <tr>
-                <td className="px-5 py-8 text-slate-400" colSpan={5}>
+                <td className="px-5 py-8 text-slate-400" colSpan={8}>
                   No holdings yet.
                 </td>
               </tr>
             ) : (
-              holdings.map((row) => (
-                <tr key={`${row.user_id}-${row.stock_id}`} className="border-b border-border/70">
-                  <td className="px-5 py-4 font-semibold text-white">{row.ticker}</td>
-                  <td className="px-5 py-4 text-slate-300">{Number(row.quantity || 0).toLocaleString()}</td>
-                  <td className="px-5 py-4 text-slate-300">${money(row.average_price)}</td>
-                  <td className="px-5 py-4 text-slate-300">${money(row.currentValue)}</td>
-                  <td className={`px-5 py-4 font-semibold ${row.profitLoss >= 0 ? 'text-green' : 'text-red'}`}>
-                    ${money(row.profitLoss)}
-                  </td>
-                </tr>
-              ))
+              holdings.map((row) => {
+                const holdingPnl = pnlData.holdings.find((h) => h.ticker === row.ticker) || {};
+                return (
+                  <tr key={`${row.user_id}-${row.stock_id}`} className="border-b border-border/70">
+                    <td className="px-5 py-4 font-semibold text-white">{row.ticker}</td>
+                    <td className="px-5 py-4 text-slate-300">{Number(row.quantity || 0).toLocaleString()}</td>
+                    <td className="px-5 py-4 text-slate-300">${money(row.average_price)}</td>
+                    <td className="px-5 py-4 text-slate-300">${money(row.currentValue)}</td>
+                    <td className={`px-5 py-4 font-semibold ${row.profitLoss >= 0 ? 'text-green' : 'text-red'}`}>
+                      ${money(row.profitLoss)}
+                    </td>
+                    <td className={`px-5 py-4 font-semibold ${pnlColor(holdingPnl.pnl1d || 0)}`}>
+                      ${money(holdingPnl.pnl1d || 0)}
+                    </td>
+                    <td className={`px-5 py-4 font-semibold ${pnlColor(holdingPnl.pnl7d || 0)}`}>
+                      ${money(holdingPnl.pnl7d || 0)}
+                    </td>
+                    <td className={`px-5 py-4 font-semibold ${pnlColor(holdingPnl.pnl30d || 0)}`}>
+                      ${money(holdingPnl.pnl30d || 0)}
+                    </td>
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>

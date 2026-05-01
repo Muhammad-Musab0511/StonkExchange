@@ -19,3 +19,8 @@ export async function withdraw(amount) {
   const { data } = await api.post('/wallet/withdraw', { amount });
   return data;
 }
+
+export async function fetchPnL() {
+  const { data } = await api.get('/wallet/pnl');
+  return data.data;
+}

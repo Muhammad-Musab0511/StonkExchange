@@ -263,8 +263,8 @@ BEGIN
     WHERE portfolio_id = v_portfolio.portfolio_id;
   END IF;
 
-  INSERT INTO orders (user_id, stock_id, order_type, side, quantity, limit_price, stop_price)
-  VALUES (p_user, p_stock, p_order_type, p_side, p_quantity, v_store_limit, v_store_stop)
+  INSERT INTO orders (user_id, stock_id, order_type, side, quantity, limit_price, stop_price, reserved_amount)
+  VALUES (p_user, p_stock, p_order_type, p_side, p_quantity, v_store_limit, v_store_stop, CASE WHEN p_side = 'buy' THEN v_reserve ELSE 0 END)
   RETURNING order_id INTO v_order_id;
 
   PERFORM log_audit(
@@ -342,6 +342,11 @@ BEGIN
   SELECT * INTO v_buy_order FROM orders WHERE order_id = t.buy_order_id;
   SELECT * INTO v_sell_order FROM orders WHERE order_id = t.sell_order_id;
 
+  -- Ensure both wallets exist
+  INSERT INTO wallets (user_id, cash_balance, reserved_balance)
+  VALUES (v_buy_order.user_id, 0, 0), (v_sell_order.user_id, 0, 0)
+  ON CONFLICT (user_id) DO NOTHING;
+
   DECLARE
     v_wallet_row wallets;
   BEGIN
@@ -368,7 +373,7 @@ BEGIN
   END IF;
 
   UPDATE wallets
-  SET reserved_balance = GREATEST(reserved_balance - v_amount, 0),
+  SET reserved_balance = GREATEST(reserved_balance - ((t.quantity::NUMERIC / v_buy_order.quantity::NUMERIC) * v_buy_order.reserved_amount), 0),
       updated_at = NOW()
   WHERE wallet_id = v_buy_wallet.wallet_id;
 
@@ -456,10 +461,10 @@ BEGIN
   END IF;
 
   v_remaining := o.quantity - o.filled_quantity;
-  v_amount := v_remaining * COALESCE(o.limit_price, 0);
 
   IF o.side = 'buy' THEN
     SELECT * INTO v_wallet FROM wallets WHERE user_id = p_user FOR UPDATE;
+    v_amount := (v_remaining::NUMERIC / o.quantity::NUMERIC) * o.reserved_amount;
     UPDATE wallets
     SET cash_balance = cash_balance + v_amount,
         reserved_balance = GREATEST(reserved_balance - v_amount, 0),
@@ -679,7 +684,15 @@ BEGIN
     RAISE EXCEPTION 'Liquidity bot users are missing';
   END IF;
 
-  -- Keep bots funded
+  -- Ensure bot wallets exist
+  INSERT INTO wallets (user_id, cash_balance, reserved_balance)
+  VALUES (v_buyer_bot_id, 5000000, 0), (v_seller_bot_id, 5000000, 0)
+  ON CONFLICT (user_id) DO UPDATE
+  SET cash_balance = GREATEST(wallets.cash_balance, 5000000),
+      reserved_balance = 0,
+      updated_at = NOW();
+
+  -- Keep bots funded (update existing wallets)
   UPDATE wallets
   SET cash_balance = GREATEST(cash_balance, 5000000),
       reserved_balance = 0,

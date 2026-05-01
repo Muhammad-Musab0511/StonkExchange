@@ -49,21 +49,26 @@ export default function StockDetailPage() {
     return data[data.length - 1] || null;
   }, [chartQuery.data]);
 
-  const bestBid = useMemo(
-    () =>
-      (orderBookQuery.data || [])
-        .filter((row) => row.side === 'buy')
-        .sort((a, b) => Number(b.limit_price) - Number(a.limit_price))[0],
-    [orderBookQuery.data]
-  );
-
-  const bestAsk = useMemo(
+  const sellRows = useMemo(
     () =>
       (orderBookQuery.data || [])
         .filter((row) => row.side === 'sell')
-        .sort((a, b) => Number(a.limit_price) - Number(b.limit_price))[0],
+        .sort((a, b) => Number(a.limit_price) - Number(b.limit_price))
+        .slice(0, 5),
     [orderBookQuery.data]
   );
+
+  const buyRows = useMemo(
+    () =>
+      (orderBookQuery.data || [])
+        .filter((row) => row.side === 'buy')
+        .sort((a, b) => Number(b.limit_price) - Number(a.limit_price))
+        .slice(0, 5),
+    [orderBookQuery.data]
+  );
+
+  const bestAsk = sellRows[0];
+  const bestBid = buyRows[0];
 
   const ownedQuantity = useMemo(() => {
     const holdings = portfolioQuery.data || [];
@@ -140,21 +145,41 @@ export default function StockDetailPage() {
         <div className="grid gap-6 lg:grid-cols-2">
           <div className="glass-panel p-6">
             <h3 className="text-lg font-semibold text-white">Order Book</h3>
-            <div className="mt-4 max-h-80 space-y-3 overflow-auto pr-1">
-              {(orderBookQuery.data || []).length === 0 ? (
-                <p className="text-sm text-slate-400">No order book data yet.</p>
-              ) : (orderBookQuery.data || []).slice(0, 10).map((row, index) => (
-                <div
-                  key={`${row.side}-${row.limit_price}-${index}`}
-                  className="flex items-center justify-between rounded-xl border border-border bg-white/5 px-4 py-3"
-                >
-                  <span className={`font-medium ${row.side === 'buy' ? 'text-green' : 'text-red'}`}>
-                    {row.side.toUpperCase()}
-                  </span>
-                  <span className="text-slate-300">${Number(row.limit_price || 0).toFixed(2)}</span>
-                  <span className="text-slate-400">{Number(row.total_quantity || 0).toLocaleString()}</span>
+            <div className="mt-4 grid gap-4 lg:grid-cols-2">
+              <div>
+                <h4 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Asks</h4>
+                <div className="space-y-3">
+                  {sellRows.length === 0 ? (
+                    <p className="text-sm text-slate-400">No sell orders.</p>
+                  ) : sellRows.map((row, index) => (
+                    <div
+                      key={`sell-${row.limit_price}-${index}`}
+                      className="flex items-center justify-between rounded-xl border border-border bg-white/5 px-4 py-3"
+                    >
+                      <span className="font-medium text-red">SELL</span>
+                      <span className="text-slate-300">${Number(row.limit_price || 0).toFixed(2)}</span>
+                      <span className="text-slate-400">{Number(row.total_quantity || 0).toLocaleString()}</span>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              </div>
+              <div>
+                <h4 className="mb-3 text-sm font-semibold uppercase tracking-[0.2em] text-slate-500">Bids</h4>
+                <div className="space-y-3">
+                  {buyRows.length === 0 ? (
+                    <p className="text-sm text-slate-400">No buy orders.</p>
+                  ) : buyRows.map((row, index) => (
+                    <div
+                      key={`buy-${row.limit_price}-${index}`}
+                      className="flex items-center justify-between rounded-xl border border-border bg-white/5 px-4 py-3"
+                    >
+                      <span className="font-medium text-green">BUY</span>
+                      <span className="text-slate-300">${Number(row.limit_price || 0).toFixed(2)}</span>
+                      <span className="text-slate-400">{Number(row.total_quantity || 0).toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 

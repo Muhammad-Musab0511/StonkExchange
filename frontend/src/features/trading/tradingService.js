@@ -41,6 +41,11 @@ export async function placeOrder(payload) {
   return data;
 }
 
+export async function cancelOrder(orderId) {
+  const { data } = await api.delete(`/orders/${orderId}`);
+  return data;
+}
+
 export async function fetchOrders() {
   const { data } = await api.get('/orders');
   return data.data;

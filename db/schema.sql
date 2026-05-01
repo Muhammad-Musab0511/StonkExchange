@@ -75,6 +75,7 @@ CREATE TABLE orders (
   filled_quantity INT NOT NULL DEFAULT 0 CHECK (filled_quantity >= 0),
   limit_price NUMERIC(12,4),
   stop_price NUMERIC(12,4),
+  reserved_amount NUMERIC(18,4) DEFAULT 0,
   status order_status NOT NULL DEFAULT 'open',
   created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
