@@ -2,7 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { motion, useScroll, useTransform } from 'framer-motion';
 
 // Load all images from the prop directory via Vite's import.meta.glob
-const imageModules = import.meta.glob('../../../prop/*.jpg', { eager: true, as: 'url' });
+const imageModules = import.meta.glob('../../../prop/*.jpg', { eager: true, query: '?url', import: 'default' });
 
 // Sort the URLs so they are in sequential order (001, 002... 240)
 const imageUrls = Object.keys(imageModules)
