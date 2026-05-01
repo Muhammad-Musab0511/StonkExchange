@@ -60,7 +60,6 @@ router.get('/pnl', async (req, res) => {
     );
 
     const pnl = {
-      daily: 0,
       weekly: 0,
       monthly: 0,
       holdings: []
@@ -70,21 +69,17 @@ router.get('/pnl', async (req, res) => {
       // Get current value
       const currentValue = Number(holding.quantity || 0) * Number(holding.last_price || 0);
       
-      // Get prices from 1d, 7d, 30d ago
+      // Get prices from 7d and 30d ago
       const { rows: prices } = await pool.query(
         `
         SELECT
           (SELECT close_price FROM price_history 
            WHERE stock_id = $1 
-           AND recorded_at < NOW() - INTERVAL '1 day'
-           ORDER BY recorded_at DESC LIMIT 1) AS price_1d,
-          (SELECT close_price FROM price_history 
-           WHERE stock_id = $1 
-           AND recorded_at < NOW() - INTERVAL '7 days'
+             AND recorded_at < date_trunc('day', NOW()) - INTERVAL '7 days'
            ORDER BY recorded_at DESC LIMIT 1) AS price_7d,
           (SELECT close_price FROM price_history 
            WHERE stock_id = $1 
-           AND recorded_at < NOW() - INTERVAL '30 days'
+             AND recorded_at < date_trunc('day', NOW()) - INTERVAL '30 days'
            ORDER BY recorded_at DESC LIMIT 1) AS price_30d
         `,
         [holding.stock_id]
@@ -95,11 +90,9 @@ router.get('/pnl', async (req, res) => {
       const currentPrice = Number(holding.last_price || 0);
 
       // Only calculate P&L if historical data exists
-      const pnl1d = p.price_1d ? (currentPrice - Number(p.price_1d)) * qty : 0;
       const pnl7d = p.price_7d ? (currentPrice - Number(p.price_7d)) * qty : 0;
       const pnl30d = p.price_30d ? (currentPrice - Number(p.price_30d)) * qty : 0;
 
-      pnl.daily += pnl1d;
       pnl.weekly += pnl7d;
       pnl.monthly += pnl30d;
 
@@ -108,7 +101,6 @@ router.get('/pnl', async (req, res) => {
         quantity: qty,
         currentPrice,
         currentValue,
-        pnl1d,
         pnl7d,
         pnl30d
       });

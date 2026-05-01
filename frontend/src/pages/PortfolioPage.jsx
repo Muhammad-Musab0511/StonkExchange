@@ -41,9 +41,8 @@ export default function PortfolioPage() {
   const holdingsValue = holdings.reduce((total, holding) => total + holding.currentValue, 0);
   const totalBalance = availableBalance + reservedBalance + holdingsValue;
 
-  const pnlData = pnlQuery.data || { daily: 0, weekly: 0, monthly: 0, holdings: [] };
+  const pnlData = pnlQuery.data || { weekly: 0, monthly: 0, holdings: [] };
   const totalCostBasis = holdings.reduce((sum, h) => sum + (Number(h.quantity || 0) * Number(h.average_price || 0)), 0);
-  const dailyPercent = totalCostBasis > 0 ? ((pnlData.daily / totalCostBasis) * 100).toFixed(2) : '0.00';
   const weeklyPercent = totalCostBasis > 0 ? ((pnlData.weekly / totalCostBasis) * 100).toFixed(2) : '0.00';
   const monthlyPercent = totalCostBasis > 0 ? ((pnlData.monthly / totalCostBasis) * 100).toFixed(2) : '0.00';
 
@@ -77,12 +76,7 @@ export default function PortfolioPage() {
         </div>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <div className="glass-panel p-6">
-          <p className="text-xs uppercase tracking-[0.2em] text-slate-500">1D P&L</p>
-          <p className={`mt-3 text-2xl font-bold ${pnlColor(pnlData.daily)}`}>${money(pnlData.daily)}</p>
-          <p className={`mt-1 text-sm ${pnlColor(pnlData.daily)}`}>{dailyPercent}%</p>
-        </div>
+      <div className="grid gap-4 md:grid-cols-2">
         <div className="glass-panel p-6">
           <p className="text-xs uppercase tracking-[0.2em] text-slate-500">7D P&L</p>
           <p className={`mt-3 text-2xl font-bold ${pnlColor(pnlData.weekly)}`}>${money(pnlData.weekly)}</p>
@@ -104,7 +98,6 @@ export default function PortfolioPage() {
               <th className="px-5 py-4">Avg Price</th>
               <th className="px-5 py-4">Current Value</th>
               <th className="px-5 py-4">Total P&L</th>
-              <th className="px-5 py-4">1D P&L</th>
               <th className="px-5 py-4">7D P&L</th>
               <th className="px-5 py-4">30D P&L</th>
             </tr>
@@ -112,7 +105,7 @@ export default function PortfolioPage() {
           <tbody>
             {holdings.length === 0 ? (
               <tr>
-                <td className="px-5 py-8 text-slate-400" colSpan={8}>
+                <td className="px-5 py-8 text-slate-400" colSpan={7}>
                   No holdings yet.
                 </td>
               </tr>
@@ -127,9 +120,6 @@ export default function PortfolioPage() {
                     <td className="px-5 py-4 text-slate-300">${money(row.currentValue)}</td>
                     <td className={`px-5 py-4 font-semibold ${row.profitLoss >= 0 ? 'text-green' : 'text-red'}`}>
                       ${money(row.profitLoss)}
-                    </td>
-                    <td className={`px-5 py-4 font-semibold ${pnlColor(holdingPnl.pnl1d || 0)}`}>
-                      ${money(holdingPnl.pnl1d || 0)}
                     </td>
                     <td className={`px-5 py-4 font-semibold ${pnlColor(holdingPnl.pnl7d || 0)}`}>
                       ${money(holdingPnl.pnl7d || 0)}
